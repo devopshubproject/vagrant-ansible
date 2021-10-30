@@ -20,7 +20,7 @@ Vagrant.configure("2") do |config|
       :box => "bento/ubuntu-18.04",
       :ram => 1024,
       :vcpu => 1,
-      :ip => "192.168.50.19"
+      :ip => "192.168.50.26"
     },
     {
       :name => "ansible-server",
@@ -53,14 +53,33 @@ Vagrant.configure("2") do |config|
 # => ssh key decalartion
       #config.vm.synced_folder ".", "/vagrant", id: "vagrant-root", disabled: true
       id_rsa_key_pub = File.read(File.join(Dir.home, ".ssh", "vagrant_id_rsa.pub"))
+      
+      # config.vm.provision "shell", inline: <<-SHELL
+      #    "echo 'Creating SSH key path' && mkdir -p ~/vagrant/.ssh/ && chmod 600 ~/vagrant/.ssh/"
+      # SHELL
 
-
-      config.vm.provision "shell", inline: <<-SHELL
-         "echo 'appending SSH public key to ~/vagrant/.ssh/authorized_keys' && echo '#{id_rsa_key_pub}' >> ~/vagrant/.ssh/authorized_keys && chmod 600 ~/vagrant/.ssh/authorized_keys"
+      # config.vm.provision "shell", inline: <<-SHELL
+      #    "echo 'appending SSH public key to ~/vagrant/.ssh/authorized_keys' && echo '#{id_rsa_key_pub}' >> ~/vagrant/.ssh/authorized_keys && chmod 600 ~/vagrant/.ssh/authorized_keys"
+      # SHELL
+    config.vm.provision "shell", inline: <<-SHELL
+      echo 'Copying public SSH Keys to the VM'
+      mkdir -p /home/vagrant/.ssh
+      chmod 600 /home/vagrant/.ssh
+      echo '#{id_rsa_key_pub}' >> /home/vagrant/.ssh/authorized_keys
+      chmod -R 600 /home/vagrant/.ssh/authorized_keys
+      echo 'Host 192.168.*.*' >> /home/vagrant/.ssh/config
+      echo 'StrictHostKeyChecking no' >> /home/vagrant/.ssh/config
+      echo 'UserKnownHostsFile /dev/null' >> /home/vagrant/.ssh/config
+      chmod -R 600 /home/vagrant/.ssh/config
       SHELL
-
+    
     end
   end
 
       config.ssh.insert_key = false
+
+  # if [:name] == "ansible-server" then
+  #     config.vm.provision machine[:name] do |shell|
+  #       shell.path = "scripts/install_ansible.sh"
+  # end
 end
